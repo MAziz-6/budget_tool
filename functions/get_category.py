@@ -73,8 +73,8 @@ def get_category(row):
                 return category
             
     # Fallback: If amount is positive and heavily implies income (optional)
-    if amount > 1000 and 'Income' not in str(rules): 
-        # You can add logic here if you want to catch uncategorized deposits
-        pass
+    # if amount > 1000 and 'Income' not in str(rules): 
+    #     # You can add logic here if you want to catch uncategorized deposits
+    #     pass
 
     return 'Uncategorized'

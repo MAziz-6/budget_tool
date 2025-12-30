@@ -1,9 +1,6 @@
-# main.py
-from functions.get_csv import build_current_budget_df
-from functions.standardize_columns import standardize_columns
+from functions.build_df import build_current_budget_df
 
 def main():
-    # Use r'' for Windows paths to ensure backslashes are read correctly
     directory = r'/home/maziz/budget_tool/data' 
     
     try:
@@ -14,7 +11,7 @@ def main():
             print(budget_df.head())
             
             # Optional: Save to a master CSV to verify
-            # budget_df.to_csv('master_budget.csv', index=False)
+            budget_df.to_csv('master_budget.csv', index=False)
         else:
             print("No data found.")
             
