@@ -3,6 +3,7 @@ import pandas as pd
 
 from functions.standardize_columns import standardize_columns
 from functions.get_category import get_category
+from functions.check_recurring import check_recurring
 
 def build_current_budget_df(directory) -> pd.DataFrame:
     """
@@ -47,6 +48,7 @@ def build_current_budget_df(directory) -> pd.DataFrame:
         master_df = pd.concat(all_dataframes, ignore_index=True)
         print(f"Applying Categories to {len(master_df)} total rows...\n")
         master_df['category'] = master_df.apply(get_category, axis=1)
+        master_df['Is_Recurring'] = master_df.apply(check_recurring, axis=1)
         return master_df
     else:
         print("No data found in any subdirectory.")
