@@ -26,14 +26,13 @@ def build_current_budget_df(directory) -> pd.DataFrame:
                 folder_path = entry.path
                 
                 # Look for CSV files in this folder
-
                 all_files_in_folder = os.listdir(folder_path)
                 csv_files = [os.path.join(folder_path, f) for f in all_files_in_folder if f.lower().endswith('.csv')]
-                
+                # If there are csv files, pick the newest one
                 if csv_files:
                     newest_file = max(csv_files, key=os.path.getctime)
                     print(f"[{account_name}] Found: {os.path.basename(newest_file)}")
-                    
+                    # Load the CSV then clean it up
                     try:
                         df = pd.read_csv(newest_file, on_bad_lines='skip', index_col=False)
                         df['Account'] = account_name
@@ -52,4 +51,4 @@ def build_current_budget_df(directory) -> pd.DataFrame:
         return master_df
     else:
         print("No data found in any subdirectory.")
-        return pd.DataFrame()  # Always returns a DataFrame (even if empty)
+        return pd.DataFrame()  

@@ -11,7 +11,7 @@ def main():
             print(f"Success! Combined {len(budget_df)} rows.")
             print(budget_df.head())
             
-            # Optional: Save to a master CSV to verify
+            # local save for testing
             budget_df.to_csv('master_budget.csv', index=False)
             budget_df.to_csv(output_path, index=False)
             print(f"Master budget saved to {output_path}")
