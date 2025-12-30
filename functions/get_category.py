@@ -43,12 +43,14 @@ def get_category(row):
             'TRADER JOE', 'COSTCO WHSE', 'SPROUTS', 'RALPHS', 'VONS', 'ALBERTSONS', 
             'WHOLE FOODS', '88 RANCH', 'LAZY ACRES', 'FARMERS MARKET'
         ]),
-        ('Amazon', ['AMAZON', 'AMZN']), # Keep this separate as requested
+        ('Amazon', ['AMAZON', 'AMZN']), 
         ('Dining/Restaurants', [
             'RIVIAN CAFE', 'IN-N-OUT', 'CHIPOTLE', 'BURGER', 'PIZZA', 'TACO', 
             'RAMEN', 'SUSHI', 'GRILL', 'CAFE', 'BISTRO', 'DINER', 'PUB', 'BAR',
-            'DOORDASH', 'UBER EATS', 'GRUBHUB', 'MCDONALD', 'STARBUCKS', 'COFFEE',
-            'DUNKIN', 'REVOLUTION ROASTERS', 'VIGILANTE COFFEE', 'BAGEL'
+            'DOORDASH', 'UBER EATS', 'GRUBHUB', 'MCDONALD', 'BAGEL'
+        ]),
+        ('Coffee', [
+            'COFFEE', 'ROAST', 'CAFE', 'VIGILANTE', 'REVOLUTION', 'STARBUCKS', 'DUNKIN'
         ]),
         ('Shopping/Merchandise', [
             'TARGET', 'WALMART', 'HOMEGOODS', 'MARSHALLS', 'TJ MAXX', 'ROSS', 

@@ -2,6 +2,7 @@ from functions.build_df import build_current_budget_df
 
 def main():
     directory = r'/home/maziz/budget_tool/data' 
+    output_path = r'/mnt/c/Users/matta/Downloads/master_budget.csv'
     
     try:
         budget_df = build_current_budget_df(directory)
@@ -12,6 +13,8 @@ def main():
             
             # Optional: Save to a master CSV to verify
             budget_df.to_csv('master_budget.csv', index=False)
+            budget_df.to_csv(output_path, index=False)
+            print(f"Master budget saved to {output_path}")
         else:
             print("No data found.")
             

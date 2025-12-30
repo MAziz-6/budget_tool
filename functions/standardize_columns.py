@@ -1,42 +1,56 @@
+import pandas as pd
+
 def standardize_columns(df):
     """
-    Normalizes column names and fixes sign mismatches.
+    Normalizes column names, converts money columns to actual numbers, 
+    and fixes sign mismatches (Costco vs Chase).
     """
     # 1. Normalize headers
     df.columns = [c.strip().lower() for c in df.columns]
 
+    # --- FIX 1: Rescue the 'Account' column ---
+    # The line above turned 'Account' into 'account'.
+    # We rename it back to 'Account' so the final filter finds it.
+    if 'account' in df.columns:
+        df.rename(columns={'account': 'Account'}, inplace=True)
+
+    # --- HELPER: Force columns to be numeric ---
+    def clean_money_column(col_name):
+        if col_name in df.columns:
+            df[col_name] = df[col_name].astype(str).str.replace(r'[$,]', '', regex=True)
+            df[col_name] = pd.to_numeric(df[col_name], errors='coerce').fillna(0)
+
     # 2. Fix Costco (Debit/Credit split)
     if 'debit' in df.columns and 'credit' in df.columns:
-        df['debit'] = df['debit'].fillna(0)
-        df['credit'] = df['credit'].fillna(0)
+        clean_money_column('debit')
+        clean_money_column('credit')
         df['amount'] = (df['debit'] + df['credit']) * -1
 
     # 3. Define Mapping
-    # FIX: Removed 'details' from description mapping to avoid collision with Chase 'Details' column
     column_mapping = {
         'date': ['posting date', 'transaction date', 'date', 'post date'],
-        'description': ['description', 'merchant'], # 'details' removed
+        'description': ['description', 'merchant', 'details'], 
         'amount': ['amount'],
         'category': ['category', 'type']
     }
 
     # 4. Apply Renaming
     for standard_name, variations in column_mapping.items():
-        # Only rename if we don't already have the standard column
         if standard_name not in df.columns:
             for variant in variations:
                 if variant in df.columns:
                     df.rename(columns={variant: standard_name}, inplace=True)
                     break
     
-    # 5. SAFETY: Drop duplicate columns if any were created
-    # This specifically fixes "Reindexing only valid with uniquely valued Index objects"
+    # 5. Safety: Remove Duplicate Columns
     df = df.loc[:, ~df.columns.duplicated()]
 
-    # 6. Final Filter
+    # 6. Clean the final 'amount' column
+    clean_money_column('amount')
+
+    # 7. Final Filter
     desired_cols = ['date', 'amount', 'description', 'category', 'Account']
     
-    # Fill missing columns with None
     for col in desired_cols:
         if col not in df.columns:
             df[col] = None 

@@ -35,7 +35,7 @@ def build_current_budget_df(directory) -> pd.DataFrame:
                     print(f"[{account_name}] Found: {os.path.basename(newest_file)}")
                     
                     try:
-                        df = pd.read_csv(newest_file)
+                        df = pd.read_csv(newest_file, on_bad_lines='skip', index_col=False)
                         df['Account'] = account_name
                         df = standardize_columns(df)
                         all_dataframes.append(df)
