@@ -1,6 +1,8 @@
 import os
 import pandas as pd
-import glob
+
+from functions.standardize_columns import standardize_columns
+from functions.get_category import get_category
 
 def build_current_budget_df(directory) -> pd.DataFrame:
     """
@@ -23,8 +25,9 @@ def build_current_budget_df(directory) -> pd.DataFrame:
                 folder_path = entry.path
                 
                 # Look for CSV files in this folder
-                csv_pattern = os.path.join(folder_path, '*.csv')
-                csv_files = glob.glob(csv_pattern)
+
+                all_files_in_folder = os.listdir(folder_path)
+                csv_files = [os.path.join(folder_path, f) for f in all_files_in_folder if f.lower().endswith('.csv')]
                 
                 if csv_files:
                     newest_file = max(csv_files, key=os.path.getctime)
@@ -33,6 +36,7 @@ def build_current_budget_df(directory) -> pd.DataFrame:
                     try:
                         df = pd.read_csv(newest_file)
                         df['Account'] = account_name
+                        df = standardize_columns(df)
                         all_dataframes.append(df)
                     except Exception as e:
                         print(f"  Error reading {newest_file}: {e}")
@@ -41,6 +45,8 @@ def build_current_budget_df(directory) -> pd.DataFrame:
 
     if all_dataframes:
         master_df = pd.concat(all_dataframes, ignore_index=True)
+        print(f"Applying Categories to {len(master_df)} total rows...\n")
+        master_df['category'] = master_df.apply(get_category, axis=1)
         return master_df
     else:
         print("No data found in any subdirectory.")

@@ -1,38 +1,44 @@
-import pandas as pd
-
 def standardize_columns(df):
     """
-    Renames columns in the dataframe based on a known mapping.
-    Converts all column names to lowercase first to make matching easier.
+    Normalizes column names and fixes sign mismatches.
     """
-    # 1. Normalize existing columns to lowercase/strip whitespace
-    # This ensures ' Amount ' matches 'amount'
+    # 1. Normalize headers
     df.columns = [c.strip().lower() for c in df.columns]
 
-    # 2. Define your "Translation Map"
-    # Key = Standard Name you want
-    # Value = List of possible names found in your CSVs
+    # 2. Fix Costco (Debit/Credit split)
+    if 'debit' in df.columns and 'credit' in df.columns:
+        df['debit'] = df['debit'].fillna(0)
+        df['credit'] = df['credit'].fillna(0)
+        df['amount'] = (df['debit'] + df['credit']) * -1
+
+    # 3. Define Mapping
+    # FIX: Removed 'details' from description mapping to avoid collision with Chase 'Details' column
     column_mapping = {
-        'date': ['order date', 'posting date', 'transaction date', 'post date'],
-        'amount': ['debit', 'price', 'total', 'cost', 'payment amount'],
-        'description': ['payee', 'merchant', 'item description', 'details'],
-        'category': ['budget category', 'type']
+        'date': ['posting date', 'transaction date', 'date', 'post date'],
+        'description': ['description', 'merchant'], # 'details' removed
+        'amount': ['amount'],
+        'category': ['category', 'type']
     }
 
-    # 3. Apply the renaming
+    # 4. Apply Renaming
     for standard_name, variations in column_mapping.items():
-        for variant in variations:
-            if variant in df.columns:
-                # Rename the variant to the standard name
-                df.rename(columns={variant: standard_name}, inplace=True)
-                # Once we find a match for this standard name, we can stop checking variations
-                # (Assuming only one variation exists per file)
-                break
-                
-    # 4. (Optional) Filter to keep ONLY the standard columns + Account
-    # This drops extra noise like "Transaction ID" or "City" that you might not need.
-    keep_cols = ['date', 'amount', 'description', 'category', 'Account']
+        # Only rename if we don't already have the standard column
+        if standard_name not in df.columns:
+            for variant in variations:
+                if variant in df.columns:
+                    df.rename(columns={variant: standard_name}, inplace=True)
+                    break
     
-    # Filter for columns that actually exist in this DF
-    existing_cols = [c for c in keep_cols if c in df.columns]
-    return df[existing_cols]
+    # 5. SAFETY: Drop duplicate columns if any were created
+    # This specifically fixes "Reindexing only valid with uniquely valued Index objects"
+    df = df.loc[:, ~df.columns.duplicated()]
+
+    # 6. Final Filter
+    desired_cols = ['date', 'amount', 'description', 'category', 'Account']
+    
+    # Fill missing columns with None
+    for col in desired_cols:
+        if col not in df.columns:
+            df[col] = None 
+            
+    return df[desired_cols]
