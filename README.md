@@ -95,7 +95,7 @@ pyinstaller --noconfirm --onefile --console --name "bud.get" --clean `
     --add-data "dashboard/dashboard.py;dashboard" `
     --hidden-import "pandas" `
     --hidden-import "plotly" `
-    run_app.pyy
+    run_app.py
 ```
 - `--console`: Hides the black terminal window.
 - `--icon`: uses app_icon.ico` for the appplication icon (looks nice!).
