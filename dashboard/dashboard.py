@@ -7,22 +7,21 @@ import zipfile
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="bud.get",      # <--- This puts "bud.get" on the browser tab!
-    page_icon="💸",            # <--- This puts a money bag icon next to it
+    page_title="bud.get",
+    page_icon="💸",
     layout="wide"
 )
 
 # --- 1. Load Data ---
 @st.cache_data
 def load_data():
-    # Try finding the file in parent or current directory
     try:
         df = pd.read_csv('../master_budget.csv')
     except FileNotFoundError:
         try:
             df = pd.read_csv('master_budget.csv')
         except FileNotFoundError:
-            return pd.DataFrame() # Return empty if not found
+            return pd.DataFrame()
     
     if not df.empty:
         df['date'] = pd.to_datetime(df['date'])
@@ -31,17 +30,15 @@ def load_data():
 df = load_data()
 
 if df.empty:
-    st.error("⚠️ Data file not found. Please run 'main.py' first to generate your budget.")
+    st.error("⚠️ Data file not found. Please run the app next to your 'master_budget.csv'.")
     st.stop()
 
 # --- 2. Sidebar Filters ---
 st.sidebar.header("Filter Your Data")
 
-# Helper: Get Min/Max dates
 min_date = df['date'].min().date()
 max_date = df['date'].max().date()
 
-# Session State for Date Picker
 if 'date_range' not in st.session_state:
     st.session_state['date_range'] = (min_date, max_date)
 
@@ -49,7 +46,6 @@ def set_this_month():
     today = pd.Timestamp.now().date()
     start = today.replace(day=1)
     end = (pd.Timestamp(start) + pd.offsets.MonthEnd(0)).date()
-    # Clip to available data range
     st.session_state['date_range'] = (max(start, min_date), min(end, max_date))
 
 st.sidebar.button("📅 Focus on This Month", on_click=set_this_month)
@@ -61,10 +57,8 @@ start_date, end_date = st.sidebar.date_input(
     key='date_range'
 )
 
-# Categories
 categories = sorted(df['category'].dropna().unique().tolist())
 default_exclude = ['Income/Payroll', 'Transfer to Savings', 'Loan/Credit Card Payment', 'Transfers', 'Transfers/P2P']
-# Only use defaults that actually exist in the data
 default_exclude = [c for c in default_exclude if c in categories]
 
 exclude_cats = st.sidebar.multiselect("Exclude Categories", options=categories, default=default_exclude)
@@ -109,33 +103,62 @@ with tab1:
         rec_grp['Label'] = rec_grp['Is_Recurring'].map({True: 'Fixed / Recurring', False: 'Discretionary'})
         st.plotly_chart(px.pie(rec_grp, values='amount', names='Label', hole=0.4), use_container_width=True)
 
-# TAB 2: DEEP DIVE
+# TAB 2: ACCOUNT DEEP DIVE
 with tab2:
-    st.header("📂 Account Analysis")
-    # Use full DF for list so 'Costco' always shows up
-    accts = sorted(df['Account'].dropna().unique().tolist())
-    sel_acct = st.selectbox("Select Account", accts)
+    st.header("📂 Analyze Specific Folders")
     
-    # Filter based on selection AND date range
-    acct_df = filtered_df[(filtered_df['Account'] == sel_acct) & (filtered_df['amount'] < 0)]
+    account_list = sorted(df['Account'].dropna().unique().tolist())
+    selected_account = st.selectbox("Select an Account / Source:", account_list)
     
-    if not acct_df.empty:
-        total = abs(acct_df['amount'].sum())
-        count = len(acct_df)
-        avg = total / count
+    acct_spend = filtered_df[
+        (filtered_df['Account'] == selected_account) & 
+        (filtered_df['amount'] < 0)
+    ]
+    
+    # --- Main Analysis UI ---
+    if not acct_spend.empty:
+        acct_total = abs(acct_spend['amount'].sum())
+        acct_tx_count = len(acct_spend)
+        avg_tx = acct_total / acct_tx_count
         
         c1, c2, c3 = st.columns(3)
-        c1.metric("Total Spent", f"${total:,.2f}")
-        c2.metric("Transactions", count)
-        c3.metric("Avg Transaction", f"${avg:,.2f}")
+        c1.metric(f"Total Spent in '{selected_account}'", f"${acct_total:,.2f}")
+        c2.metric("Total Transactions", acct_tx_count)
+        c3.metric("Average Purchase", f"${avg_tx:,.2f}")
         
-        c_chart, c_data = st.columns([2,1])
-        with c_chart:
-            st.plotly_chart(px.bar(acct_df.groupby('category')['amount'].sum().abs().reset_index(), x='category', y='amount', text_auto='.2s'), use_container_width=True)
-        with c_data:
-            st.dataframe(acct_df[['date', 'description', 'amount', 'category']].sort_values('date', ascending=False), use_container_width=True, hide_index=True)
+        col_chart, col_data = st.columns([2, 1])
+        with col_chart:
+            acct_cat_spend = acct_spend.groupby('category')['amount'].sum().abs().reset_index().sort_values('amount', ascending=False)
+            fig_acct = px.bar(acct_cat_spend, x='category', y='amount', color='category', text_auto='.2s')
+            st.plotly_chart(fig_acct, use_container_width=True)
+            
+        with col_data:
+            st.dataframe(acct_spend[['date', 'description', 'amount', 'category']].sort_values('date', ascending=False), use_container_width=True, hide_index=True)
     else:
-        st.info(f"No spending found for {sel_acct} in this date range.")
+        st.info(f"No spending found for '{selected_account}' in the current view.")
+
+    # --- Collapsed Debugger ---
+    st.markdown("---")
+    with st.expander("🛠️ Developer Tools / Debugger"):
+        st.write(f"**Selected Account:** `{selected_account}`")
+        
+        debug_df = df[df['Account'] == selected_account]
+        st.write(f"Total Rows in CSV: `{len(debug_df)}`")
+        
+        date_filtered = debug_df[
+            (debug_df['date'].dt.date >= start_date) & 
+            (debug_df['date'].dt.date <= end_date)
+        ]
+        st.write(f"Rows in Date Range: `{len(date_filtered)}`")
+        
+        neg_tx = date_filtered[date_filtered['amount'] < 0]
+        st.write(f"Spending Rows (Negative): `{len(neg_tx)}`")
+
+        if len(date_filtered) > 0 and len(neg_tx) == 0:
+            st.error("🚨 Potential Issue: Transactions found but none are negative (spending).")
+            st.dataframe(date_filtered.head())
+        else:
+            st.success("✅ Data checks out: Spending transactions detected.")
 
 # TAB 3: SAVINGS
 with tab3:

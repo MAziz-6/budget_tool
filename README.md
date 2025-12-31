@@ -77,6 +77,30 @@ uv pip install pandas streamlit plotly
     * The script will process the data and automatically launch the server.
     * Open your browser (in Windows) and go to: **`http://localhost:8501`**
 
+## 📦 Building a Standalone Executable (.exe)
+
+You can compile this project into a single `.exe` file that runs on Windows without needing Python installed.
+
+### 1. Requirements
+You must perform the build step **in Windows (PowerShell/CMD)**, not WSL.
+```powershell
+pip install pandas streamlit plotly pyinstaller
+```
+### 2. The Build Command
+Run this command in the project root. It bundles Streamlit, your code, and the dashboard into one file.
+```PowerShell
+pyinstaller --noconfirm --onefile --console --name "bud.get" --clean `
+    --icon "app_icon.ico" `
+    --collect-all streamlit `
+    --add-data "dashboard/dashboard.py;dashboard" `
+    --hidden-import "pandas" `
+    --hidden-import "plotly" `
+    run_app.pyy
+```
+- `--console`: Hides the black terminal window.
+- `--icon`: uses app_icon.ico` for the appplication icon (looks nice!).
+- `run_app.py`: Special entry point script that handles the interal Streamlit server launch.
+
 ## ⚙️ Configuration
 
 ### Adjusting Categories
@@ -88,6 +112,14 @@ rules = [
     # Add your own rules here...
 ]
 ```
+### Debugging Invisible Data
+
+If you see transactions in your CSV but not in the "Deep Dive" tab, it is usually because of a date mismatch or positive/negative sign issue.
+
+1.  Scroll to the bottom of the **Account Deep Dive** tab.
+2.  Expand **"🛠️ Developer Tools / Debugger"**.
+3.  This panel will tell you exactly how many rows are being filtered out by the date slider vs. category filters.
+
 ## 📤 Exporting Data
 
 Go to the **"Exports"** tab in the dashboard to download:
